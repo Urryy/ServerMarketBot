@@ -1,0 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using ServerMarketBot;
+using ServerMarketBot.Repository.Impl;
+using ServerMarketBot.Repository.Interfaces;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseKestrel();
+
+string connectionToDb = builder.Configuration.GetConnectionString("DefaultConnection")!;
+builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseSqlServer(connectionToDb));
+
+builder.Services.AddSingleton<TelegramBot>();
+builder.Services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
+
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+
+app.Services.GetRequiredService<TelegramBot>().LaunchAsync().Wait();
+
+app.UseRouting();
+
+app.MapControllers();
+
+app.Run();
