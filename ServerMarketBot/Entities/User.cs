@@ -9,7 +9,8 @@ public class User : Entity
     public string Name { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public Role Role { get; set; }
-    public long? LastMessageId { get; set; }
+    public Team Team { get; set; }
+    public int? LastMessageId { get; set; }
 
     protected User() 
         : base()
@@ -17,12 +18,13 @@ public class User : Entity
 
     }
 
-    public User(long chatTelegramId, string name, Role role, long? lastMessageId = null)
+    public User(long chatTelegramId, string name, Role role, int? lastMessageId = null)
         : this()
     {
         ChatTelegramId = chatTelegramId;
         Name = name;
         Role = role;
         LastMessageId = lastMessageId;
+        Team = Team.None;
     }
 }

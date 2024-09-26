@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using ServerMarketBot;
 using ServerMarketBot.Repository.Impl;
 using ServerMarketBot.Repository.Interfaces;
+using ServerMarketBot.Services.Impl;
+using ServerMarketBot.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,7 @@ builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseSqlServer(connectio
 
 builder.Services.AddSingleton<TelegramBot>();
 builder.Services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddTransient<ITelegramBotService, TelegramBotService>();
 
 builder.Services.AddControllers();
 

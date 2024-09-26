@@ -12,10 +12,10 @@ public class Repository<TEntity> : IRepository<TEntity>
     private readonly DatabaseContext context;
     private readonly DbSet<TEntity> entities;
 
-    public Repository(DatabaseContext context, DbSet<TEntity> entities)
+    public Repository(DatabaseContext context)
     {
         this.context = context;
-        this.entities = entities;
+        entities = context.Set<TEntity>();
     }
 
     public async Task AddAsync(TEntity entity)
