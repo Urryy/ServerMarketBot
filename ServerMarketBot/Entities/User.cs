@@ -11,6 +11,7 @@ public class User : Entity
     public Role Role { get; set; }
     public Team Team { get; set; }
     public int? LastMessageId { get; set; }
+    public string Command { get; set; }
 
     protected User() 
         : base()
@@ -18,7 +19,7 @@ public class User : Entity
 
     }
 
-    public User(long chatTelegramId, string name, Role role, int? lastMessageId = null)
+    public User(long chatTelegramId, string name, Role role, string command, int? lastMessageId = null)
         : this()
     {
         ChatTelegramId = chatTelegramId;
@@ -26,5 +27,6 @@ public class User : Entity
         Role = role;
         LastMessageId = lastMessageId;
         Team = Team.None;
+        Command = command;
     }
 }

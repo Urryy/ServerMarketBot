@@ -33,6 +33,9 @@ public static class BotCommands
     public static string BotInfoServerAgentsLucaCommand = "Введите вручную название сервера и сумму пополнения, после чего отправьте данное сообщение (Например P1 1000$)";
     public static string BotInfoServerAgentsQuangCaoCommand = "Введите вручную название сервера и сумму пополнения, после чего отправьте данное сообщение (Например S1 1000$):";
 
+    public static string ApprovedByUserCommand = "ApprovedByUserCommand";
+    public static string CancelledCommand = "CancelledCommand";
+
     public static List<IdNameDto> TeamCommands = new List<IdNameDto>
     {
         new IdNameDto(Team.Inferno.ToString(), InfernoCommand),

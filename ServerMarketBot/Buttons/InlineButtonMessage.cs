@@ -98,4 +98,19 @@ public class InlineButtonMessage
             }
         });
     }
+
+    public static InlineKeyboardMarkup GetApproveAndCancelledButtonsByUser(Guid Id)
+    {
+        return new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Подтвердить ✔️", (BotCommands.ApprovedByUserCommand +"_"+ Id.ToString())),
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Отменить ❌", (BotCommands.CancelledCommand +"_"+ Id.ToString())),
+            }
+        });
+    }
 }
