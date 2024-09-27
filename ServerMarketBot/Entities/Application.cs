@@ -13,6 +13,7 @@ public class Application : Entity
     public int Sequence { get; set; }
     public string Message { get; set; }
     public string? ModerationMessage { get; set; } // Если заявка отклонена через модерацию.
+    public int? TelegramMessageId { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
 
     protected Application()

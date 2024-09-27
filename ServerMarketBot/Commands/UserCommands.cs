@@ -11,4 +11,9 @@ public class UserCommands
     public static string Luca = "Luca";
     public static string QuangCao = "QuangCao";
     public static string DraftApplication = "DraftApplication";
+    public static string Lamansh = "Lamansh";
+    public static string Rashodniki = "Rashodniki";
+    public static string Approved = "Approved";
+    public static string Cancelled = "Cancelled";
+    public static string InUnderСonsiderationTL = "InUnderСonsiderationTL";
 }

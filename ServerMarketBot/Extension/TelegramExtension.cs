@@ -7,6 +7,37 @@ namespace ServerMarketBot.Extension;
 
 public static class TelegramExtension
 {
+    public static string GetUserName(this Update upd)
+    {
+        var name = "unknown_user";
+        if(upd.Type == UpdateType.CallbackQuery)
+        {
+            name = upd.CallbackQuery!.From?.Username ?? "unknown_user";
+        }
+        else if (upd.Type == UpdateType.Message)
+        {
+            name = upd.Message!.From?.Username ?? "unknown_user";
+        }
+
+        return name;
+    }
+
+    public static long? GetTelegramId(this Update upd)
+    {
+        if (upd.Type == UpdateType.CallbackQuery)
+        {
+            return upd.CallbackQuery!.From?.Id;
+        }
+        else if (upd.Type == UpdateType.Message)
+        {
+            return upd.Message!.From?.Id;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     public static async Task<long?> GetChatId(this Update upd)
     {
         if (upd.Type == UpdateType.CallbackQuery)

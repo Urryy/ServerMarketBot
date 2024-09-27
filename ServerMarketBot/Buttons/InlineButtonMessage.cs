@@ -1,4 +1,5 @@
 ﻿using ServerMarketBot.Commands;
+using ServerMarketBot.Entities;
 using ServerMarketBot.Entities.Common;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -109,8 +110,44 @@ public class InlineButtonMessage
             },
             new[]
             {
-                InlineKeyboardButton.WithCallbackData("Отменить ❌", (BotCommands.CancelledCommand +"_"+ Id.ToString())),
+                InlineKeyboardButton.WithCallbackData("Отменить ❌", (BotCommands.CancelledByUserCommand +"_"+ Id.ToString())),
             }
         });
+    }
+
+    public static InlineKeyboardMarkup GetApproveAndCancelledButtonsByAdmin(Application app)
+    {
+        if(app.State != State.InUnderСonsiderationForTL)
+        {
+            return new InlineKeyboardMarkup(new[]
+            {
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Оплачено ✔️", (BotCommands.ApprovedByAdminCommand +"_"+ app.Id.ToString())),
+                },
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("На рассмотрении", (BotCommands.InUnderСonsiderationForTLCommand +"_"+ app.Id.ToString()))
+                },
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Отклонена ❌", $"{BotCommands.CancelledByAdminCommand}_{app.Id}")
+                }
+            });
+        }
+        else
+        {
+            return new InlineKeyboardMarkup(new[]
+            {
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Оплачено ✔️", (BotCommands.ApprovedByAdminCommand +"_"+ app.Id.ToString())),
+                },
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Отклонена ❌", $"{BotCommands.CancelledByAdminCommand}_{app.Id}")
+                }
+            });
+        }
     }
 }

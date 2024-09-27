@@ -32,9 +32,15 @@ public static class BotCommands
     public static string BotInfoServerAgentsPremiumAgencyGroupCommand = "Введите вручную название сервера и сумму пополнения, после чего отправьте данное сообщение (Например VPS1 2000$):";
     public static string BotInfoServerAgentsLucaCommand = "Введите вручную название сервера и сумму пополнения, после чего отправьте данное сообщение (Например P1 1000$)";
     public static string BotInfoServerAgentsQuangCaoCommand = "Введите вручную название сервера и сумму пополнения, после чего отправьте данное сообщение (Например S1 1000$):";
+    public static string BotInfoServerLamanshCommand = "Введите сумму пополнения, после чего отправьте данное сообщение (Например 1000$):";
+    public static string BotInfoServerRashodnikiCommand = "Введите вручную 1. Адрес кошелька/Ссылку на оплату/Контакт продавца у кого что-то купить/Данные для входа на сайт оплаты 2. Назначение платежа 3. Сумма, после чего отправьте данное сообщение:";
 
     public static string ApprovedByUserCommand = "ApprovedByUserCommand";
-    public static string CancelledCommand = "CancelledCommand";
+    public static string CancelledByUserCommand = "CancelledByUserCommand";
+
+    public static string ApprovedByAdminCommand = "ApprovedByAdminCommand";
+    public static string CancelledByAdminCommand = "CancelledByAdminCommand";
+    public static string InUnderСonsiderationForTLCommand = "СonsiderationTLCommand";
 
     public static List<IdNameDto> TeamCommands = new List<IdNameDto>
     {

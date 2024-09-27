@@ -5,6 +5,7 @@ namespace ServerMarketBot.Entities;
 public class User : Entity
 {
     public override Guid Id { get; set; } = Guid.NewGuid();
+    public long TelegramId { get; set; }
     public long ChatTelegramId { get; set; }
     public string Name { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
@@ -19,9 +20,10 @@ public class User : Entity
 
     }
 
-    public User(long chatTelegramId, string name, Role role, string command, int? lastMessageId = null)
+    public User(long telegramId, long chatTelegramId, string name, Role role, string command, int? lastMessageId = null)
         : this()
     {
+        TelegramId = telegramId;
         ChatTelegramId = chatTelegramId;
         Name = name;
         Role = role;

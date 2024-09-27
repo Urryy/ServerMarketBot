@@ -1,10 +1,14 @@
-﻿using ServerMarketBot.Buttons;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using ServerMarketBot.Buttons;
 using ServerMarketBot.Commands;
+using ServerMarketBot.Dto;
 using ServerMarketBot.Entities;
 using ServerMarketBot.Entities.Common;
 using ServerMarketBot.Extension;
 using ServerMarketBot.Repository.Interfaces;
 using ServerMarketBot.Services.Interfaces;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -49,11 +53,13 @@ public class TelegramBotService : ITelegramBotService
             if (string.IsNullOrEmpty(text)) return;
 
             var userRepository = scope.ServiceProvider.GetRequiredService<IRepository<User>>();
-            var user = await userRepository.GetByExpressionAsync(i => i.ChatTelegramId == chatId);
+            var telegramId = upd.GetTelegramId();
+            var user = await userRepository.GetByExpressionAsync(i => i.TelegramId == telegramId);
 
             if(user == null)
             {
-                var newUser = new User(chatId, upd.Message?.Chat.Username ?? upd.Message?.Chat.LastName ?? "unknown user", Role.User, UserCommands.Start);
+                var tId = upd.GetTelegramId();
+                var newUser = new User(tId.Value, chatId, upd.GetUserName(), Role.User, UserCommands.Start);
                 await userRepository.AddAsync(newUser);
                 await ExecuteStart(client, chatId);
                 return;
@@ -69,14 +75,17 @@ public class TelegramBotService : ITelegramBotService
             {
                 user.Team = text.Replace("Command", "").ToEnum<Team>();
                 user.Command = UserCommands.ChooseTeam;
-                await client.SendTextMessageAsync(chatId, "Для того, чтобы сделать запрос на пополнение - нажмите на кнопку \"Пополнить\"",
+                var messageTelegram = await client.SendTextMessageAsync(chatId, "Для того, чтобы сделать запрос на пополнение - нажмите на кнопку \"Пополнить\"",
                     replyMarkup: InlineButtonMessage.GetFillButtons());
+                user.LastMessageId = messageTelegram.MessageId;
             }
 
             if(text == BotCommands.FillCommand)
             {
                 user.Command = UserCommands.TypeFill;
-                await client.SendMessageAsync(upd, user, "Выберите тип пополнения", InlineButtonMessage.GetTypesFillButtons());
+                var messageTelegram = await client.SendTextMessageAsync(chatId, "Выберите тип пополнения", 
+                    replyMarkup: InlineButtonMessage.GetTypesFillButtons());
+                user.LastMessageId = messageTelegram.MessageId;
             }
 
             if(text == BotCommands.AgentsCommand)
@@ -138,7 +147,7 @@ public class TelegramBotService : ITelegramBotService
                 }
                 application.Message = text;
                 await applicationRepository.UpdateAsync(application);
-                await ExecuteApplicationWithGroup(user, client, upd, application);
+                await application.ExecuteApplicationAgentWithGroup(user, client, upd);
             }
 
             if(text != BotCommands.Luca && user.Command == UserCommands.Luca)
@@ -155,7 +164,7 @@ public class TelegramBotService : ITelegramBotService
                 }
                 application.Message = text;
                 await applicationRepository.UpdateAsync(application);
-                await ExecuteApplication(user, client, upd, application);
+                await application.ExecuteApplicationAgent(user, client, upd);
             }
 
             if (text != BotCommands.QuangCao && user.Command == UserCommands.QuangCao)
@@ -172,25 +181,94 @@ public class TelegramBotService : ITelegramBotService
                 }
                 application.Message = text;
                 await applicationRepository.UpdateAsync(application);
-                await ExecuteApplication(user, client, upd, application);
+                await application.ExecuteApplicationAgent(user, client, upd);
             }
 
-            if(text.Contains(BotCommands.ApprovedByUserCommand))
+            if (text == BotCommands.LamanshCommand)
             {
+                user.Command = UserCommands.Lamansh;
+                var appRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var count = (await appRepository.GetAllAsync()).Count + 1;
+                var application = new Application(user.Id, TypeApplication.Lamansh, AgentApplication.None, count, string.Empty);
+                await appRepository.AddAsync(application);
+
+                await client.SendMessageAsync(upd, user, BotCommands.BotInfoServerLamanshCommand);
+            }
+
+            if(text != BotCommands.LamanshCommand && user.Command == UserCommands.Lamansh)
+            {
+                user.Command = UserCommands.DraftApplication;
+                var appRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var application = (await appRepository.GetAllByExpressionAsync(i =>
+                    i.Type == TypeApplication.Lamansh && i.Agent == AgentApplication.None))
+                    .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
+                if (application == null)
+                {
+                    await client.SendTextMessageAsync(chatId, "Упс, произошла ошибка, введите значение еще раз");
+                    return;
+                }
+                application.Message = text;
+                await appRepository.UpdateAsync(application);
+                await application.ExecuteApplicationLamansh(user, client, upd);
+            }
+
+            if(text == BotCommands.RashodnikiCommand)
+            {
+                user.Command = UserCommands.Rashodniki;
+
+                var appRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var count = (await appRepository.GetAllAsync()).Count + 1;
+                var application = new Application(user.Id, TypeApplication.Rashodniki, AgentApplication.None, count, string.Empty);
+                await appRepository.AddAsync(application);
+
+                await client.SendMessageAsync(upd, user, BotCommands.BotInfoServerRashodnikiCommand);
+            }
+
+            if(text != BotCommands.RashodnikiCommand && user.Command == UserCommands.Rashodniki)
+            {
+                user.Command = UserCommands.DraftApplication;
+                var appRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var application = (await appRepository.GetAllByExpressionAsync(i =>
+                    i.Type == TypeApplication.Rashodniki && i.Agent == AgentApplication.None))
+                    .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
+                if (application == null)
+                {
+                    await client.SendTextMessageAsync(chatId, "Упс, произошла ошибка, введите значение еще раз");
+                    return;
+                }
+                application.Message = text;
+                await appRepository.UpdateAsync(application);
+                await application.ExecuteApplicationRashodniki(user, client, upd);
+            }
+
+            if (text.Contains(BotCommands.ApprovedByUserCommand))
+            {
+                user.Command = UserCommands.Approved;
                 var appId = text.Split("_")[1];
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
                 application.State = State.InUnderСonsideration;
-                await applicationRepository.UpdateAsync(application);
-
+                
                 var message = $"Ваша заявка №{application.Sequence} была отправлена ✔️\r\n" +
                     $"Ожидайте сообщение о подтверждении\r\n" +
                     $"Для того, чтобы оформить новую заявку - нажмите кнопку \"Пополнить\"\r\n";
                 await client.SendMessageAsync(upd, user, message, InlineButtonMessage.GetFillButtons());
+
+                // После этого отправить заявку в группу в зависимости от команды.
+                var teams = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                var teamChatId = teams[$"Teams:{user.Team}"];
+                var messageGroup = await application.ExecuteApplicationForTeamChannel(user, client, upd);
+                var messageTelegram = await client.SendTextMessageAsync(teamChatId, messageGroup,
+                    replyMarkup: InlineButtonMessage.GetApproveAndCancelledButtonsByAdmin(application),
+                    parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
+
+                application.TelegramMessageId = messageTelegram.MessageId;
+                await applicationRepository.UpdateAsync(application);
             }
 
-            if (text.Contains(BotCommands.CancelledCommand))
+            if (text.Contains(BotCommands.CancelledByUserCommand))
             {
+                user.Command = UserCommands.Cancelled;
                 var appId = text.Split("_")[1];
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
@@ -200,41 +278,117 @@ public class TelegramBotService : ITelegramBotService
                 await client.SendMessageAsync(upd, user, "Ваша заявка была отменена ❌", InlineButtonMessage.GetFillButtons());
             }
 
-            if (text == BotCommands.LamanshCommand)
+            if (text.Contains(BotCommands.ApprovedByAdminCommand))
             {
+                user.Command = UserCommands.Approved;
+                var appId = text.Split("_")[1];
+                var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
+                application.State = State.Payed;
+                await applicationRepository.UpdateAsync(application);
 
+                var userByApp = await userRepository.GetByIdAsync(application.UserId);
+                var message = $"Ваша заявка №{application.Sequence} на пополнение была оплачена ✔️";
+                var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, message);
+                userByApp.LastMessageId = messageTelegram.MessageId;
+                await userRepository.UpdateAsync(userByApp);
+
+                if(application.TelegramMessageId != null)
+                {
+                    await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value, 
+                        $"Заявка №{application.Sequence} была оплачена ✔️");
+                }
+                else
+                {
+                    await client.SendTextMessageAsync(chatId,
+                        $"Заявка №{application.Sequence} была оплачена ✔️");
+                }
             }
 
-            if(text == BotCommands.RashodnikiCommand)
+            if (text.Contains(BotCommands.CancelledByAdminCommand))
             {
+                user.Command = UserCommands.Cancelled;
+                var appId = text.Split("_")[1];
+                var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
+                application.State = State.Cancelled;
+                await applicationRepository.UpdateAsync(application);
+
+                await client.SendTextMessageAsync(chatId,
+                    $"Введите причину отклонения, скопировав данную сообщение: `#CLD#{application.Id}#CLD#` и вставив ее в начало сообщения.",
+                    parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
+            }
+
+            if (text.Contains("#CLD#"))
+            {
+                string pattern = @"#CLD#(.*?)#CLD#";
+                Match match = Regex.Match(text, pattern);
+
+                if (match.Success)
+                {
+                    var appId = match.Groups[1].Value;
+                    var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                    var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
+                    var message = text.Replace(appId, "").Replace("#CLD#", "");
+                    application.State = State.Cancelled;
+                    application.ModerationMessage = message;
+                    await applicationRepository.UpdateAsync(application);
+
+                    var userByApp = await userRepository.GetByIdAsync(application.UserId);
+                    var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, 
+                        $"Ваша заявка №{application.Sequence} на пополнение была отклонена ❌ \nпо причине: {message}");
+                    userByApp.LastMessageId = messageTelegram.MessageId;
+                    await userRepository.UpdateAsync(userByApp);
+
+                    if (application.TelegramMessageId != null)
+                    {
+                        await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value,
+                            $"Заявка №{application.Sequence} была отклонена ❌");
+                    }
+                    else
+                    {
+                        await client.SendTextMessageAsync(chatId,
+                            $"Заявка №{application.Sequence} была отклонена ❌");
+                    }
+                }
+                else
+                {
+                    await client.SendTextMessageAsync(chatId, $"Упс, что-то пошло не так.\r\n\n" +
+                        $"Нажмите кнопку отклонить еще раз.");
+                }
+            }
+
+            if (text.Contains(BotCommands.InUnderСonsiderationForTLCommand))
+            {
+                user.Command = UserCommands.InUnderСonsiderationTL;
+                var appId = text.Split("_")[1];
+                var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
+                var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
+                application.State = State.InUnderСonsiderationForTL;
+                await applicationRepository.UpdateAsync(application);
+
+                var userByApp = await userRepository.GetByIdAsync(application.UserId);
+                var messageForuser = $"Ваша заявка №{application.Sequence} находится на рассмотрении TL команды, ожидайте 👀";
+                var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, messageForuser);
+                userByApp.LastMessageId = messageTelegram.MessageId;
+                await userRepository.UpdateAsync(userByApp);
+
+                var messageForadmin = await application.ExecuteApplicationForTeamChannel(userByApp, client, upd);
+
+                if (application.TelegramMessageId == null)
+                {
+                    await client.SendTextMessageAsync(chatId, messageForadmin);
+                }
+                else
+                {
+                    await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value, messageForadmin,
+                        replyMarkup: InlineButtonMessage.GetApproveAndCancelledButtonsByAdmin(application));
+                }
 
             }
 
             await userRepository.UpdateAsync(user);
         }
-    }
-
-    private async Task ExecuteApplication(User user, ITelegramBotClient client, Update upd, Entities.Application app)
-    {
-        var message = $"Заявка №{app.Sequence} на пополнение:\r\n" +
-            $"Type: {app.Type.GetNameTypeApplication()}\r\n" +
-            $"Agent: {app.Agent.ToString()}\r\n" +
-            $"Server and sum: {app.Message}\r\n\n" +
-            $"Подтвердите или отклоните заявку";
-
-        await client.SendMessageAsync(upd, user, message, InlineButtonMessage.GetApproveAndCancelledButtonsByUser(app.Id));
-    }
-
-    private async Task ExecuteApplicationWithGroup(User user, ITelegramBotClient client, Update upd, Entities.Application app)
-    {
-        var message = $"Заявка №{app.Sequence} на пополнение:\r\n" +
-            $"Type: {app.Type.GetNameTypeApplication()}\r\n" +
-            $"Agent: {app.Agent.ToString()}\r\n" +
-            $"Group: {app.Group}\r\n" +
-            $"Server and sum: {app.Message}\r\n\n" +
-            $"Подтвердите или отклоните заявку";
-
-        await client.SendMessageAsync(upd, user, message, InlineButtonMessage.GetApproveAndCancelledButtonsByUser(app.Id));
     }
 
     private async Task ExecuteStart(ITelegramBotClient client, long chatId)
