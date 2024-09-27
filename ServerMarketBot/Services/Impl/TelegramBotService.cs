@@ -293,16 +293,16 @@ public class TelegramBotService : ITelegramBotService
                 userByApp.LastMessageId = messageTelegram.MessageId;
                 await userRepository.UpdateAsync(userByApp);
 
-                if(application.TelegramMessageId != null)
+                var messageForEdit = await application.ExecuteApplicationForTeamChannel(user, client, upd);
+                if (application.TelegramMessageId != null)
                 {
-                    await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value, 
-                        $"Заявка №{application.Sequence} была оплачена ✔️");
+                    await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value,
+                        messageForEdit,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
                 }
-                else
-                {
-                    await client.SendTextMessageAsync(chatId,
+                
+                await client.SendTextMessageAsync(chatId,
                         $"Заявка №{application.Sequence} была оплачена ✔️");
-                }
             }
 
             if (text.Contains(BotCommands.CancelledByAdminCommand))
@@ -340,16 +340,16 @@ public class TelegramBotService : ITelegramBotService
                     userByApp.LastMessageId = messageTelegram.MessageId;
                     await userRepository.UpdateAsync(userByApp);
 
+                    var messageForEdit = await application.ExecuteApplicationForTeamChannel(user, client, upd);
                     if (application.TelegramMessageId != null)
                     {
                         await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value,
-                            $"Заявка №{application.Sequence} была отклонена ❌");
+                            messageForEdit,
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
                     }
-                    else
-                    {
-                        await client.SendTextMessageAsync(chatId,
-                            $"Заявка №{application.Sequence} была отклонена ❌");
-                    }
+
+                    await client.SendTextMessageAsync(chatId,
+                        $"Заявка №{application.Sequence} была отклонена ❌");
                 }
                 else
                 {
@@ -382,7 +382,8 @@ public class TelegramBotService : ITelegramBotService
                 else
                 {
                     await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value, messageForadmin,
-                        replyMarkup: InlineButtonMessage.GetApproveAndCancelledButtonsByAdmin(application));
+                        replyMarkup: InlineButtonMessage.GetApproveAndCancelledButtonsByAdmin(application),
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
                 }
 
             }
