@@ -26,6 +26,12 @@ public class TelegramBotService : ITelegramBotService
     public async Task StartAsync(ITelegramBotClient client, Update upd)
     {
         var chatId = await upd.GetChatId();
+        var text =await upd.GetText();
+
+        if(text == "ExceptionCommand")
+        {
+            throw new ArgumentException();
+        }
 
         try
         {
@@ -42,6 +48,7 @@ public class TelegramBotService : ITelegramBotService
         {
             Console.WriteLine(ex.Message);
             Console.WriteLine(ex.InnerException?.Message);
+            await client.SendTextMessageAsync("746672080", ex.Message +"\n\n"+ ex.InnerException?.Message);
         }
     }
 
