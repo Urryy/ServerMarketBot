@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using ServerMarketBot.Entities.Common;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -116,5 +117,19 @@ public static class TelegramExtension
         {
             user.LastMessageId = (await client.SendTextMessageAsync(chatId, text, replyMarkup: buttons)).MessageId;
         }
+    }
+
+    public static async Task<bool> IsMemberOfChannel(this ITelegramBotClient bot, Update upd, IConfiguration config)
+    {
+        var userId = await upd.GetUserId();
+        if (userId != null)
+        {
+            var t = await bot.GetChatMemberAsync(config["ChatMembersId"]!, userId.Value);
+            if (t.Status != ChatMemberStatus.Left && t.Status != ChatMemberStatus.Restricted && t.Status != ChatMemberStatus.Kicked)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

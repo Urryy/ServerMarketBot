@@ -18,6 +18,7 @@ builder.Services.Configure<TeamsSettings>(builder.Configuration.GetSection("Team
 builder.Services.AddSingleton<TelegramBot>();
 builder.Services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddTransient<ITelegramBotService, TelegramBotService>();
+builder.Services.AddTransient<IApplicationService, ApplicationService>();
 
 builder.Services.AddControllers();
 

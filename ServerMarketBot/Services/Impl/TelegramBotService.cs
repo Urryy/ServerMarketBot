@@ -40,8 +40,8 @@ public class TelegramBotService : ITelegramBotService
         }
         catch (Exception ex)
         {
-
-            throw;
+            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.InnerException?.Message);
         }
     }
 
@@ -56,7 +56,13 @@ public class TelegramBotService : ITelegramBotService
             var telegramId = upd.GetTelegramId();
             var user = await userRepository.GetByExpressionAsync(i => i.TelegramId == telegramId);
 
-            if(user == null)
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var isMember = await client.IsMemberOfChannel(upd, configuration);
+            if (!isMember) return;
+
+            if (configuration["ChatMembersId"] == chatId.ToString()) return;
+
+            if (user == null)
             {
                 var tId = upd.GetTelegramId();
                 var newUser = new User(tId.Value, chatId, upd.GetUserName(), Role.User, UserCommands.Start);
@@ -282,18 +288,13 @@ public class TelegramBotService : ITelegramBotService
             {
                 user.Command = UserCommands.Approved;
                 var appId = text.Split("_")[1];
-                var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
-                var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
-                application.State = State.Payed;
-                await applicationRepository.UpdateAsync(application);
+                var applicationSrvc = scope.ServiceProvider.GetRequiredService<IApplicationService>();
+                var application = await applicationSrvc.UpdateState(scope, State.Payed, appId);
 
-                var userByApp = await userRepository.GetByIdAsync(application.UserId);
-                var message = $"Ваша заявка №{application.Sequence} на пополнение была оплачена ✔️";
-                var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, message);
-                userByApp.LastMessageId = messageTelegram.MessageId;
-                await userRepository.UpdateAsync(userByApp);
+                var userByApp = await SendMessageByApplicationUser(client, userRepository, application,
+                    $"Ваша заявка №{application.Sequence} на пополнение была оплачена ✔️");
 
-                var messageForEdit = await application.ExecuteApplicationForTeamChannel(user, client, upd);
+                var messageForEdit = await application.ExecuteApplicationForTeamChannel(userByApp, client, upd);
                 if (application.TelegramMessageId != null)
                 {
                     await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value,
@@ -309,10 +310,8 @@ public class TelegramBotService : ITelegramBotService
             {
                 user.Command = UserCommands.Cancelled;
                 var appId = text.Split("_")[1];
-                var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
-                var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
-                application.State = State.Cancelled;
-                await applicationRepository.UpdateAsync(application);
+                var applicationSrvc = scope.ServiceProvider.GetRequiredService<IApplicationService>();
+                var application = await applicationSrvc.UpdateState(scope, State.Cancelled, appId);
 
                 await client.SendTextMessageAsync(chatId,
                     $"Введите причину отклонения, скопировав данную сообщение: `#CLD#{application.Id}#CLD#` и вставив ее в начало сообщения.",
@@ -327,20 +326,14 @@ public class TelegramBotService : ITelegramBotService
                 if (match.Success)
                 {
                     var appId = match.Groups[1].Value;
-                    var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
-                    var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
                     var message = text.Replace(appId, "").Replace("#CLD#", "");
-                    application.State = State.Cancelled;
-                    application.ModerationMessage = message;
-                    await applicationRepository.UpdateAsync(application);
+                    var applicationSrvc = scope.ServiceProvider.GetRequiredService<IApplicationService>();
+                    var application = await applicationSrvc.UpdateState(scope, State.Cancelled, appId, message);
 
-                    var userByApp = await userRepository.GetByIdAsync(application.UserId);
-                    var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, 
+                    var userByApp = await SendMessageByApplicationUser(client, userRepository, application,
                         $"Ваша заявка №{application.Sequence} на пополнение была отклонена ❌ \nпо причине: {message}");
-                    userByApp.LastMessageId = messageTelegram.MessageId;
-                    await userRepository.UpdateAsync(userByApp);
 
-                    var messageForEdit = await application.ExecuteApplicationForTeamChannel(user, client, upd);
+                    var messageForEdit = await application.ExecuteApplicationForTeamChannel(userByApp, client, upd);
                     if (application.TelegramMessageId != null)
                     {
                         await client.EditMessageTextAsync(chatId, application.TelegramMessageId.Value,
@@ -362,16 +355,11 @@ public class TelegramBotService : ITelegramBotService
             {
                 user.Command = UserCommands.InUnderСonsiderationTL;
                 var appId = text.Split("_")[1];
-                var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
-                var application = await applicationRepository.GetByIdAsync(Guid.Parse(appId));
-                application.State = State.InUnderСonsiderationForTL;
-                await applicationRepository.UpdateAsync(application);
+                var applicationSrvc = scope.ServiceProvider.GetRequiredService<IApplicationService>();
+                var application = await applicationSrvc.UpdateState(scope, State.InUnderСonsiderationForTL, appId);
 
-                var userByApp = await userRepository.GetByIdAsync(application.UserId);
-                var messageForuser = $"Ваша заявка №{application.Sequence} находится на рассмотрении TL команды, ожидайте 👀";
-                var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, messageForuser);
-                userByApp.LastMessageId = messageTelegram.MessageId;
-                await userRepository.UpdateAsync(userByApp);
+                var userByApp = await SendMessageByApplicationUser(client, userRepository, application, 
+                    $"Ваша заявка №{application.Sequence} находится на рассмотрении TL команды, ожидайте 👀");
 
                 var messageForadmin = await application.ExecuteApplicationForTeamChannel(userByApp, client, upd);
 
@@ -396,5 +384,15 @@ public class TelegramBotService : ITelegramBotService
     {
         await client.SendTextMessageAsync(chatId, "Добро пожаловать. Укажите в какой команде вы находитесь и мы продолжим.",
                     replyMarkup: InlineButtonMessage.GetStartChooseTeamButtons());
+    }
+
+    private async Task<User> SendMessageByApplicationUser(ITelegramBotClient client, IRepository<User> repository, Application application, 
+        string message)
+    {
+        var userByApp = await repository.GetByIdAsync(application.UserId);
+        var messageTelegram = await client.SendTextMessageAsync(userByApp.ChatTelegramId, message);
+        userByApp.LastMessageId = messageTelegram.MessageId;
+        await repository.UpdateAsync(userByApp);
+        return userByApp;
     }
 }
