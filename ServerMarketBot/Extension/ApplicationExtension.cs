@@ -101,14 +101,14 @@ public static class ApplicationExtension
             return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
                 $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
                 $"- Team: {user.Team.ToString()}\r\n" +
-                $"${app.Message.Replace("_", "\\_")}";
+                $"{app.Message.Replace("_", "\\_")}";
         }
         else
         {
             return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
             $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
             $"- Team: {user.Team.ToString()}\r\n" +
-            $"`${app.Message.Replace("_", "\\_")}`";
+            $"`{app.Message.Replace("_", "\\_")}`";
         }
     }
 }
