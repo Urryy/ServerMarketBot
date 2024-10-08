@@ -89,12 +89,12 @@ public static class ApplicationExtension
             $"- Agent: Luca\r\n" +
             $"`{user.Team.ToString()} | {app.Message.Replace("_", "\\_")}`";
         }
-        else if (app.Agent == AgentApplication.QuangCao)
+        else if (app.Agent == AgentApplication.QuangCao || app.Agent == AgentApplication.SDAgency)
         {
             return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
             $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
             $"- Team: {user.Team.ToString()}\r\n" +
-            $"`Quang Cao | {app.Message.Replace("_", "\\_")}`";
+            $"`{app.Agent} | {app.Message.Replace("_", "\\_")}`";
         }
         else if(app.Type == TypeApplication.Rashodniki)
         {

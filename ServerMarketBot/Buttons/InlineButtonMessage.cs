@@ -25,6 +25,10 @@ public class InlineButtonMessage
             {
                 InlineKeyboardButton.WithCallbackData(Team.Galaxy.ToString(), BotCommands.GalaxyCommand),
                 InlineKeyboardButton.WithCallbackData(Team.Juniors.ToString(), BotCommands.JuniorsCommand),
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData(Team.Wild.ToString(), BotCommands.WildCommand),
             }
         });
     }
@@ -66,15 +70,13 @@ public class InlineButtonMessage
             new[]
             {
                 InlineKeyboardButton.WithCallbackData("Premium Agency", BotCommands.PremiumAgency),
-            },
-            new[]
-            {
                 InlineKeyboardButton.WithCallbackData("Luca", BotCommands.Luca),
             },
             new[]
             {
                 InlineKeyboardButton.WithCallbackData("Quang Cao", BotCommands.QuangCao),
-            }
+                InlineKeyboardButton.WithCallbackData("SD Agency", BotCommands.SDAgency),
+            },
         });
     }
 

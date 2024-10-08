@@ -8,5 +8,6 @@ public enum Team
     Redline,
     Mercury,
     Galaxy,
-    Juniors
+    Juniors,
+    Wild
 }

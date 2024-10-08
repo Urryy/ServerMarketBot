@@ -35,13 +35,15 @@ public class TelegramBotService : ITelegramBotService
 
         try
         {
-            if (chatId != null)
+            if (chatId == null) throw new Exception();
+
+            if(text == "/CreateTeam")
             {
-                await ExecuteCommands(client, upd, chatId.Value);
+                
             }
             else
             {
-                throw new Exception();
+                await ExecuteCommands(client, upd, chatId.Value);
             }
         }
         catch (Exception ex)
@@ -135,12 +137,13 @@ public class TelegramBotService : ITelegramBotService
                 await client.SendMessageAsync(upd, user, BotCommands.BotInfoServerAgentsLucaCommand);
             }
 
-            if (text == BotCommands.QuangCao)
+            if (text == BotCommands.QuangCao || text == BotCommands.SDAgency)
             {
-                user.Command = UserCommands.QuangCao;
+                user.Command = UserCommands.STANDARD;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var count = (await applicationRepository.GetAllAsync()).Count + 1;
-                var application = new Application(user.Id, TypeApplication.Agents, AgentApplication.QuangCao, count, string.Empty);
+                var application = new Application(user.Id, TypeApplication.Agents, text == BotCommands.QuangCao ? AgentApplication.QuangCao : AgentApplication.SDAgency, 
+                    count, string.Empty);
                 await applicationRepository.AddAsync(application);
 
                 await client.SendMessageAsync(upd, user, BotCommands.BotInfoServerAgentsQuangCaoCommand);
@@ -180,12 +183,12 @@ public class TelegramBotService : ITelegramBotService
                 await application.ExecuteApplicationAgent(user, client, upd);
             }
 
-            if (text != BotCommands.QuangCao && user.Command == UserCommands.QuangCao)
+            if (text != BotCommands.QuangCao && text != BotCommands.SDAgency && user.Command == UserCommands.STANDARD)
             {
                 user.Command = UserCommands.DraftApplication;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = (await applicationRepository.GetAllByExpressionAsync(i =>
-                    i.Type == TypeApplication.Agents && i.Agent == AgentApplication.QuangCao))
+                    i.Type == TypeApplication.Agents && (i.Agent == AgentApplication.QuangCao || i.Agent == AgentApplication.SDAgency)))
                     .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
                 if (application == null)
                 {
@@ -196,6 +199,8 @@ public class TelegramBotService : ITelegramBotService
                 await applicationRepository.UpdateAsync(application);
                 await application.ExecuteApplicationAgent(user, client, upd);
             }
+
+            #region Lamansh
 
             if (text == BotCommands.LamanshCommand)
             {
@@ -225,7 +230,11 @@ public class TelegramBotService : ITelegramBotService
                 await application.ExecuteApplicationLamansh(user, client, upd);
             }
 
-            if(text == BotCommands.RashodnikiCommand)
+            #endregion
+
+            #region Rashodniki
+
+            if (text == BotCommands.RashodnikiCommand)
             {
                 user.Command = UserCommands.Rashodniki;
 
@@ -254,6 +263,9 @@ public class TelegramBotService : ITelegramBotService
                 await application.ExecuteApplicationRashodniki(user, client, upd);
             }
 
+            #endregion
+
+            #region ADMIN COMMANDS STATE
             if (text.Contains(BotCommands.ApprovedByUserCommand))
             {
                 user.Command = UserCommands.Approved;
@@ -382,6 +394,7 @@ public class TelegramBotService : ITelegramBotService
                 }
 
             }
+            #endregion
 
             await userRepository.UpdateAsync(user);
         }

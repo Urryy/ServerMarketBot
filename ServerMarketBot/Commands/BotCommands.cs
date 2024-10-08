@@ -11,6 +11,8 @@ public static class BotCommands
     public static string MercuryCommand = "MercuryCommand";
     public static string GalaxyCommand = "GalaxyCommand";
     public static string JuniorsCommand = "JuniorsCommand";
+    public static string WildCommand = "WildCommand";
+
 
     public static string FillCommand = "FillCommand";
 
@@ -21,6 +23,7 @@ public static class BotCommands
     public static string PremiumAgency = "PremiumAgency";
     public static string Luca = "Luca";
     public static string QuangCao = "QuangCao";
+    public static string SDAgency = "SDAgency";
 
     public static string Group1 = "Group1";
     public static string Group2 = "Group2";
@@ -50,6 +53,7 @@ public static class BotCommands
         new IdNameDto(Team.Mercury.ToString(), MercuryCommand),
         new IdNameDto(Team.Galaxy.ToString(), GalaxyCommand),
         new IdNameDto(Team.Juniors.ToString(), JuniorsCommand),
+        new IdNameDto(Team.Wild.ToString(), WildCommand)
     };
 
     public static List<IdNameDto> GroupCommands = new List<IdNameDto>

@@ -9,7 +9,7 @@ public class UserCommands
     public static string PremiumAgency = "PremiumAgency";
     public static string PremiumAgencyGroup = "PremiumAgencyGroup";
     public static string Luca = "Luca";
-    public static string QuangCao = "QuangCao";
+    public static string STANDARD = "STANDARD";
     public static string DraftApplication = "DraftApplication";
     public static string Lamansh = "Lamansh";
     public static string Rashodniki = "Rashodniki";

@@ -5,5 +5,7 @@ public enum AgentApplication
     None,
     PremiumAgency,
     Luca,
-    QuangCao
+    STANDARD,
+    QuangCao,
+    SDAgency
 }
