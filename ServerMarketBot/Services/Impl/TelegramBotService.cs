@@ -14,6 +14,7 @@ using Telegram.Bot.Types;
 
 namespace ServerMarketBot.Services.Impl;
 
+using static System.Formats.Asn1.AsnWriter;
 using User = Entities.User;
 
 public class TelegramBotService : ITelegramBotService
@@ -37,9 +38,13 @@ public class TelegramBotService : ITelegramBotService
         {
             if (chatId == null) throw new Exception();
 
-            if(text == "/CreateTeam")
+            if(text == "/sign_team")
             {
                 
+            }
+            else if(text != null && text.Contains("/settings"))
+            {
+                await ExecuteSettings(client, upd, chatId.Value);
             }
             else
             {
@@ -76,19 +81,19 @@ public class TelegramBotService : ITelegramBotService
                 var tId = upd.GetTelegramId();
                 var newUser = new User(tId.Value, chatId, upd.GetUserName(), Role.User, UserCommands.Start);
                 await userRepository.AddAsync(newUser);
-                await ExecuteStart(client, chatId);
+                await ExecuteStart(scope, client, chatId);
                 return;
             }
 
             if(text == "/start")
             {
-                await ExecuteStart(client, chatId);
+                await ExecuteStart(scope, client, chatId);
                 return;
             }
 
-            if(text.IsTeamCommand())
+            if(IsTeamCommand(scope, text))
             {
-                user.Team = text.Replace("Command", "").ToEnum<Team>();
+                user.Team = text.Replace("Command", "");
                 user.Command = UserCommands.ChooseTeam;
                 var messageTelegram = await client.SendTextMessageAsync(chatId, "Для того, чтобы сделать запрос на пополнение - нажмите на кнопку \"Пополнить\"",
                     replyMarkup: InlineButtonMessage.GetFillButtons());
@@ -280,15 +285,23 @@ public class TelegramBotService : ITelegramBotService
                 await client.SendMessageAsync(upd, user, message, InlineButtonMessage.GetFillButtons());
 
                 // После этого отправить заявку в группу в зависимости от команды.
-                var teams = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-                var teamChatId = teams[$"Teams:{user.Team}"];
-                var messageGroup = await application.ExecuteApplicationForTeamChannel(user, client, upd);
-                var messageTelegram = await client.SendTextMessageAsync(teamChatId, messageGroup,
-                    replyMarkup: InlineButtonMessage.GetApproveAndCancelledButtonsByAdmin(application),
-                    parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
+                var teams = await scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetAllAsync();
+                var teamChatId = teams.FirstOrDefault(i => i.Name == user.Team)?.ChatTeamId;
+                if (teamChatId == null)
+                {
+                    await client.SendMessageAsync(upd, user, "Команда в которой вы состоите больше не существует, пропишите /start и выберите другую команду.");
+                }
+                else
+                {
+                    var messageGroup = await application.ExecuteApplicationForTeamChannel(user, client, upd);
 
-                application.TelegramMessageId = messageTelegram.MessageId;
-                await applicationRepository.UpdateAsync(application);
+                    var messageTelegram = await client.SendTextMessageAsync(teamChatId, messageGroup,
+                        replyMarkup: InlineButtonMessage.GetApproveAndCancelledButtonsByAdmin(application),
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
+
+                    application.TelegramMessageId = messageTelegram.MessageId;
+                    await applicationRepository.UpdateAsync(application);
+                }
             }
 
             if (text.Contains(BotCommands.CancelledByUserCommand))
@@ -400,10 +413,66 @@ public class TelegramBotService : ITelegramBotService
         }
     }
 
-    private async Task ExecuteStart(ITelegramBotClient client, long chatId)
+    private async Task ExecuteSettings(ITelegramBotClient client, Update upd, long chatId)
     {
+        using (var scope = _provider.CreateScope())
+        {
+            var text = await upd.GetText();
+            if (string.IsNullOrEmpty(text)) return;
+
+            var userRepository = scope.ServiceProvider.GetRequiredService<IRepository<User>>();
+            var telegramId = upd.GetTelegramId();
+            var user = await userRepository.GetByExpressionAsync(i => i.TelegramId == telegramId);
+            if (user == null) return;
+
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var isMember = await client.IsMemberOfChannel(upd, configuration);
+            if (!isMember) return;
+
+            if (configuration["ChatMembersId"] == chatId.ToString()) return;
+
+            if(text == "/settings")
+            {
+                await client.SendMessageAsync(upd, user, "Вы вошли в пункт меню администрации.\nВыберите тип конфигурации.", 
+                    InlineButtonMessage.GetSettingsButtons());
+            }
+
+            if (text.Contains(BotCommands.TeamSettingsCommand)) 
+            {
+                await client.SendMessageAsync(upd, user, "Выберите одну из опций",
+                    InlineButtonMessage.GetTeamSettings());
+            }
+
+            if (text.Contains(BotCommands.AgentsSettingsCommand))
+            {
+                await client.SendMessageAsync(upd, user, "Выберите одну из опций",
+                    InlineButtonMessage.GetAgentsSettings());
+            }
+
+            if (text.Contains(BotCommands.TeamSettingsAddCommand))
+            {
+
+            }
+
+            await userRepository.UpdateAsync(user);
+        }
+    }
+
+    private async Task ExecuteStart(IServiceScope scope, ITelegramBotClient client, long chatId)
+    {
+        var teams = await scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetAllAsync();
+
+        var teamNames = teams.Select(i => i.Name).ToList();
+
         await client.SendTextMessageAsync(chatId, "Добро пожаловать. Укажите в какой команде вы находитесь и мы продолжим.",
-                    replyMarkup: InlineButtonMessage.GetStartChooseTeamButtons());
+                    replyMarkup: InlineButtonMessage.GetStartChooseTeamButtons(teamNames));
+    }
+
+    private bool IsTeamCommand(IServiceScope scope, string text)
+    {
+        var teams = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetAllAsync().Result;
+        var teamNames = teams.Select(i => i.Name).ToList();
+        return teamNames.Exists(n => n.Equals(text));
     }
 
     private async Task<User> SendMessageByApplicationUser(ITelegramBotClient client, IRepository<User> repository, Application application, 

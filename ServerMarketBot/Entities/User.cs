@@ -10,7 +10,7 @@ public class User : Entity
     public string Name { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public Role Role { get; set; }
-    public Team Team { get; set; }
+    public string Team { get; set; }
     public int? LastMessageId { get; set; }
     public string Command { get; set; }
 
@@ -28,7 +28,7 @@ public class User : Entity
         Name = name;
         Role = role;
         LastMessageId = lastMessageId;
-        Team = Team.None;
+        Team = string.Empty;
         Command = command;
     }
 }

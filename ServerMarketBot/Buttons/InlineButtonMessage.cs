@@ -7,30 +7,32 @@ namespace ServerMarketBot.Buttons;
 
 public class InlineButtonMessage
 {
-    public static InlineKeyboardMarkup GetStartChooseTeamButtons()
+    public static InlineKeyboardMarkup GetStartChooseTeamButtons(List<string> teams)
     {
-        return new InlineKeyboardMarkup(new[]
+        var keyboard = new List<List<InlineKeyboardButton>>();
+        var rowCount = Math.Ceiling((double)(teams.Count / 2));
+
+        for (int i = 0; i < rowCount; i++)
         {
-            new[]
+            var row = new List<InlineKeyboardButton>();
+
+            int index = i * 2;
+
+            if(index < teams.Count)
             {
-                InlineKeyboardButton.WithCallbackData(Team.Inferno.ToString(), BotCommands.InfernoCommand),
-                InlineKeyboardButton.WithCallbackData(Team.Blasters.ToString(), BotCommands.BlastersCommand),
-            },
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(Team.Redline.ToString(), BotCommands.RedlineCommand),
-                InlineKeyboardButton.WithCallbackData(Team.Mercury.ToString(), BotCommands.MercuryCommand),
-            },
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(Team.Galaxy.ToString(), BotCommands.GalaxyCommand),
-                InlineKeyboardButton.WithCallbackData(Team.Juniors.ToString(), BotCommands.JuniorsCommand),
-            },
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(Team.Wild.ToString(), BotCommands.WildCommand),
+                row.Add(InlineKeyboardButton.WithCallbackData(teams[index], teams[index] + "Command"));
             }
-        });
+
+            index++;
+
+            if(index < teams.Count)
+            {
+                row.Add(InlineKeyboardButton.WithCallbackData(teams[index], teams[index] + "Command"));
+            }
+
+            keyboard.Add(row);
+        }
+        return new InlineKeyboardMarkup(keyboard);
     }
 
     public static InlineKeyboardMarkup GetFillButtons()
@@ -113,6 +115,59 @@ public class InlineButtonMessage
             new[]
             {
                 InlineKeyboardButton.WithCallbackData("Отменить ❌", (BotCommands.CancelledByUserCommand +"_"+ Id.ToString())),
+            }
+        });
+    }
+
+    public static InlineKeyboardMarkup GetSettingsButtons()
+    {
+        return new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Команда", ("/settings_" + BotCommands.TeamSettingsCommand))
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Агенты", ("/settings_" + BotCommands.AgentsSettingsCommand))
+            }
+        });
+    }
+
+    public static InlineKeyboardMarkup GetTeamSettings()
+    {
+        return new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Создать", ("/settings_" + BotCommands.TeamSettingsAddCommand))
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Изменить", ("/settings_" + BotCommands.TeamSettingsChangeCommand))
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Удалить", ("/settings_" + BotCommands.TeamSettingsDeleteCommand))
+            }
+        });
+    }
+
+    public static InlineKeyboardMarkup GetAgentsSettings()
+    {
+        return new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Создать", ("/settings_" + BotCommands.AgentsSettingsAddCommand))
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Изменить", ("/settings_" + BotCommands.AgentsSettingsChangeCommand))
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Удалить", ("/settings_" + BotCommands.AgentsSettingsDeleteCommand))
             }
         });
     }

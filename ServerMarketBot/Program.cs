@@ -13,8 +13,6 @@ builder.WebHost.UseKestrel();
 string connectionToDb = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseSqlServer(connectionToDb));
 
-builder.Services.Configure<TeamsSettings>(builder.Configuration.GetSection("Teams"));
-
 builder.Services.AddSingleton<TelegramBot>();
 builder.Services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddTransient<ITelegramBotService, TelegramBotService>();

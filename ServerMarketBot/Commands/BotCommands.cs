@@ -45,16 +45,16 @@ public static class BotCommands
     public static string CancelledByAdminCommand = "CancelledByAdminCommand";
     public static string InUnderСonsiderationForTLCommand = "СonsiderationTLCommand";
 
-    public static List<IdNameDto> TeamCommands = new List<IdNameDto>
-    {
-        new IdNameDto(Team.Inferno.ToString(), InfernoCommand),
-        new IdNameDto(Team.Blasters.ToString(), BlastersCommand),
-        new IdNameDto(Team.Redline.ToString(), RedlineCommand),
-        new IdNameDto(Team.Mercury.ToString(), MercuryCommand),
-        new IdNameDto(Team.Galaxy.ToString(), GalaxyCommand),
-        new IdNameDto(Team.Juniors.ToString(), JuniorsCommand),
-        new IdNameDto(Team.Wild.ToString(), WildCommand)
-    };
+    public static string TeamSettingsCommand = "TeamSettingsCommand";
+    public static string AgentsSettingsCommand = "AgentsSettingsCommand";
+
+    public static string TeamSettingsAddCommand = "TeamSettingsAddCommand";
+    public static string TeamSettingsChangeCommand = "TeamSettingsChangeCommand";
+    public static string TeamSettingsDeleteCommand = "TeamSettingsDeleteCommand";
+
+    public static string AgentsSettingsAddCommand = "AgentsSettingsAddCommand";
+    public static string AgentsSettingsChangeCommand = "AgentsSettingsChangeCommand";
+    public static string AgentsSettingsDeleteCommand = "AgentsSettingsDeleteCommand";
 
     public static List<IdNameDto> GroupCommands = new List<IdNameDto>
     {
@@ -65,11 +65,6 @@ public static class BotCommands
         new IdNameDto(5.ToString(), Group5),
         new IdNameDto(6.ToString(), Group6),
     };
-
-    public static bool IsTeamCommand(this string command)
-    {
-        return TeamCommands.Exists(i => i.Name == command);
-    }
 
     public static bool IsGroupCommand(this string command)
     {
