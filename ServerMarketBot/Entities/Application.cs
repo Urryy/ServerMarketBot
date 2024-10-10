@@ -7,7 +7,7 @@ public class Application : Entity
     public override Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
     public TypeApplication Type { get; set; }
-    public AgentApplication Agent { get; set; }
+    public string Agent { get; set; }
     public State State { get; set; } = State.Draft;
     public int? Group { get; set; }
     public int Sequence { get; set; }
@@ -21,7 +21,7 @@ public class Application : Entity
 
     }
 
-    public Application(Guid userId, TypeApplication type, AgentApplication agent, int sequence, string message, int? group = null)
+    public Application(Guid userId, TypeApplication type, string agent, int sequence, string message, int? group = null)
         : this()
     {
         UserId = userId;

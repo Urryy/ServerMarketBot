@@ -65,21 +65,32 @@ public class InlineButtonMessage
         });
     }
 
-    public static InlineKeyboardMarkup GetTypesFillAgentsButtons()
+    public static InlineKeyboardMarkup GetTypesFillAgentsButtons(List<string> agents)
     {
-        return new InlineKeyboardMarkup(new[]
+        var keyboard = new List<List<InlineKeyboardButton>>();
+        var rowCount = Math.Ceiling((double)(agents.Count / 2));
+
+        for (int i = 0; i < rowCount; i++)
         {
-            new[]
+            var row = new List<InlineKeyboardButton>();
+
+            int index = i * 2;
+
+            if (index < agents.Count)
             {
-                InlineKeyboardButton.WithCallbackData("Premium Agency", BotCommands.PremiumAgency),
-                InlineKeyboardButton.WithCallbackData("Luca", BotCommands.Luca),
-            },
-            new[]
+                row.Add(InlineKeyboardButton.WithCallbackData(agents[index], agents[index] + "AgentCommand"));
+            }
+
+            index++;
+
+            if (index < agents.Count)
             {
-                InlineKeyboardButton.WithCallbackData("Quang Cao", BotCommands.QuangCao),
-                InlineKeyboardButton.WithCallbackData("SD Agency", BotCommands.SDAgency),
-            },
-        });
+                row.Add(InlineKeyboardButton.WithCallbackData(agents[index], agents[index] + "AgentCommand"));
+            }
+
+            keyboard.Add(row);
+        }
+        return new InlineKeyboardMarkup(keyboard);
     }
 
     public static InlineKeyboardMarkup GetGroupsButtons()
@@ -134,6 +145,17 @@ public class InlineButtonMessage
         });
     }
 
+    public static InlineKeyboardMarkup GetBackSettingsButtons()
+    {
+        return new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Назад в администрацию", "/settings")
+            },
+        });
+    }
+
     public static InlineKeyboardMarkup GetTeamSettings()
     {
         return new InlineKeyboardMarkup(new[]
@@ -170,6 +192,34 @@ public class InlineButtonMessage
                 InlineKeyboardButton.WithCallbackData("Удалить", ("/settings_" + BotCommands.AgentsSettingsDeleteCommand))
             }
         });
+    }
+
+    public static InlineKeyboardMarkup GetTeamSettingsButtonsByCommand(List<string> teams, string command)
+    {
+        var keyboard = new List<List<InlineKeyboardButton>>();
+        var rowCount = Math.Ceiling((double)(teams.Count / 2));
+
+        for (int i = 0; i < rowCount; i++)
+        {
+            var row = new List<InlineKeyboardButton>();
+
+            int index = i * 2;
+
+            if (index < teams.Count)
+            {
+                row.Add(InlineKeyboardButton.WithCallbackData(teams[index], "/settings_" + teams[index] + "_" + command));
+            }
+
+            index++;
+
+            if (index < teams.Count)
+            {
+                row.Add(InlineKeyboardButton.WithCallbackData(teams[index], "/settings_" + teams[index] + "_" + command));
+            }
+
+            keyboard.Add(row);
+        }
+        return new InlineKeyboardMarkup(keyboard);
     }
 
     public static InlineKeyboardMarkup GetApproveAndCancelledButtonsByAdmin(Application app)

@@ -8,7 +8,7 @@ public class Team : Entity
     public string Name { get; set; } = default!;
     public long? ChatTeamId { get; set; }
 
-    public Team(string name, long chatTeamId)
+    public Team(string name)
     {
         Name = name;
     }

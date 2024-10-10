@@ -1,8 +1,13 @@
-﻿namespace ServerMarketBot.Entities;
+﻿using ServerMarketBot.Entities.Common;
 
-public class Agent
+namespace ServerMarketBot.Entities;
+
+public class Agent : Entity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public override Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; }
-
+    public Agent(string name)
+    {
+        Name = name;
+    }
 }

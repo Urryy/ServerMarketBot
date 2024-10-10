@@ -16,4 +16,20 @@ public class UserCommands
     public static string Approved = "Approved";
     public static string Cancelled = "Cancelled";
     public static string InUnderСonsiderationTL = "InUnderСonsiderationTL";
+
+    public static string Settings = "Settings";
+    public static string TeamSettings = "TeamSettings";
+    public static string AgentsSettings = "AgentsSettings";
+
+    public static string TeamAddSettings = "TeamAddSettings";
+    public static string TeamAddSuccessSettings = "TeamAddSettings";
+    public static string TeamChangeSettings = "TeamAddSettings";
+    public static string TeamChangeSuccessSettings = "TeamAddSettings";
+    public static string TeamDeleteSettings = "TeamAddSettings";
+
+    public static string AgentsAddSettings = "AgentsAddSettings";
+    public static string AgentsAddSuccessSettings = "AgentsAddSuccessSettings";
+    public static string AgentsChangeSettings = "AgentsChangeSettings";
+    public static string AgentsChangeSuccessSettings = "AgentsChangeSuccessSettings";
+    public static string AgentsDeleteSettings = "AgentsDeleteSettings";
 }

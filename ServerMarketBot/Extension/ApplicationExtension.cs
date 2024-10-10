@@ -75,40 +75,43 @@ public static class ApplicationExtension
 
     public static async Task<string> ExecuteApplicationForTeamChannel(this Application app, User user, ITelegramBotClient client, Update upd)
     {
-        if(app.Agent == AgentApplication.PremiumAgency)
+        if(app.Type == TypeApplication.Agents)
         {
-            return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
-            $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
-            $"- Team: {user.Team.ToString()}\r\n" +
-            $"`Premium Agency | Group{app.Group} | {app.Message.Replace("_", "\\_")}`";
-        }
-        else if(app.Agent == AgentApplication.Luca)
-        {
-            return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
-            $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
-            $"- Agent: Luca\r\n" +
-            $"`{user.Team.ToString()} | {app.Message.Replace("_", "\\_")}`";
-        }
-        else if (app.Agent == AgentApplication.QuangCao || app.Agent == AgentApplication.SDAgency)
-        {
-            return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
-            $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
-            $"- Team: {user.Team.ToString()}\r\n" +
-            $"`{app.Agent} | {app.Message.Replace("_", "\\_")}`";
-        }
-        else if(app.Type == TypeApplication.Rashodniki)
-        {
-            return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
+            if (app.Agent.Replace(" ", "").ToLower() == "premiumagency")
+            {
+                return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
                 $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
                 $"- Team: {user.Team.ToString()}\r\n" +
-                $"{app.Message.Replace("_", "\\_")}";
+                $"`Premium Agency | Group{app.Group} | {app.Message.Replace("_", "\\_")}`";
+            }
+            else if (app.Agent.Replace(" ", "").ToLower() == "luca")
+            {
+                return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
+                $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
+                $"- Agent: Luca\r\n" +
+                $"`{user.Team.ToString()} | {app.Message.Replace("_", "\\_")}`";
+            }
+            else
+            {
+                return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
+                $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
+                $"- Team: {user.Team.ToString()}\r\n" +
+                $"`{app.Agent} | {app.Message.Replace("_", "\\_")}`";
+            }
         }
-        else
+        else if(app.Type == TypeApplication.Lamansh)
         {
             return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
             $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
             $"- Team: {user.Team.ToString()}\r\n" +
             $"`{app.Message.Replace("_", "\\_")}`";
+        }
+        else
+        {
+            return $"Заявка №{app.Sequence} от пользователя @{user.Name.Replace("_", "\\_")} на пополнение:\r\n" +
+                $"- Type: {app.Type.GetNameTypeApplication()}\r\n" +
+                $"- Team: {user.Team.ToString()}\r\n" +
+                $"{app.Message.Replace("_", "\\_")}";
         }
     }
 }
