@@ -10,7 +10,8 @@ public class InlineButtonMessage
     public static InlineKeyboardMarkup GetStartChooseTeamButtons(List<string> teams)
     {
         var keyboard = new List<List<InlineKeyboardButton>>();
-        var rowCount = Math.Ceiling((double)(teams.Count / 2));
+        var teamsCountRow = (teams.Count / 2.0);
+        var rowCount = Math.Ceiling(teamsCountRow);
 
         for (int i = 0; i < rowCount; i++)
         {
@@ -68,7 +69,8 @@ public class InlineButtonMessage
     public static InlineKeyboardMarkup GetTypesFillAgentsButtons(List<string> agents)
     {
         var keyboard = new List<List<InlineKeyboardButton>>();
-        var rowCount = Math.Ceiling((double)(agents.Count / 2));
+        var teamsCountRow = (agents.Count / 2.0);
+        var rowCount = Math.Ceiling(teamsCountRow);
 
         for (int i = 0; i < rowCount; i++)
         {
@@ -197,7 +199,8 @@ public class InlineButtonMessage
     public static InlineKeyboardMarkup GetTeamSettingsButtonsByCommand(List<string> teams, string command)
     {
         var keyboard = new List<List<InlineKeyboardButton>>();
-        var rowCount = Math.Ceiling((double)(teams.Count / 2));
+        var teamsCountRow = (teams.Count / 2.0);
+        var rowCount = Math.Ceiling(teamsCountRow);
 
         for (int i = 0; i < rowCount; i++)
         {

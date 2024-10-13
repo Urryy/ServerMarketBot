@@ -8,6 +8,8 @@ public class DatabaseContext : DbContext
 {
 	public DbSet<User> Users { get; set; }
 	public DbSet<Application> Applications { get; set; }
+	public DbSet<Team> Teams { get; set; }
+	public DbSet<Agent> Agents { get; set; }
 	public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt)
 	{
 		//Database.EnsureDeleted();

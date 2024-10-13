@@ -22,10 +22,10 @@ public class UserCommands
     public static string AgentsSettings = "AgentsSettings";
 
     public static string TeamAddSettings = "TeamAddSettings";
-    public static string TeamAddSuccessSettings = "TeamAddSettings";
-    public static string TeamChangeSettings = "TeamAddSettings";
-    public static string TeamChangeSuccessSettings = "TeamAddSettings";
-    public static string TeamDeleteSettings = "TeamAddSettings";
+    public static string TeamAddSuccessSettings = "TeamAddSuccessSettings";
+    public static string TeamChangeSettings = "TeamChangeSettings";
+    public static string TeamChangeSuccessSettings = "TeamChangeSuccessSettings";
+    public static string TeamDeleteSettings = "TeamDeleteSettings";
 
     public static string AgentsAddSettings = "AgentsAddSettings";
     public static string AgentsAddSuccessSettings = "AgentsAddSuccessSettings";

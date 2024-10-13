@@ -16,7 +16,7 @@ public static class ApplicationExtension
         var message = $"Перепроверьте вашу заявку:\r\n\n" +
             $"Заявка №{app.Sequence} на пополнение:\r\n" +
             $"Type: {app.Type.GetNameTypeApplication()}\r\n" +
-            $"Agent: {app.Agent.ToString()}\r\n" +
+            $"Agent: {app.Agent.Replace("AgentCommand", "")}\r\n" +
             $"Server and sum: {app.Message}\r\n\n" +
             $"Подтвердите или отклоните заявку";
 

@@ -17,6 +17,8 @@ builder.Services.AddSingleton<TelegramBot>();
 builder.Services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddTransient<ITelegramBotService, TelegramBotService>();
 builder.Services.AddTransient<IApplicationService, ApplicationService>();
+builder.Services.AddTransient<ISettingsService, SettingsService>();
+builder.Services.AddTransient<IUserService, UserService>();
 
 builder.Services.AddControllers();
 

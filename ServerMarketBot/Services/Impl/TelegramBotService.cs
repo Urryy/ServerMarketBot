@@ -14,16 +14,19 @@ using Telegram.Bot.Types;
 
 namespace ServerMarketBot.Services.Impl;
 
+using static System.Formats.Asn1.AsnWriter;
 using User = Entities.User;
 
 public class TelegramBotService : ITelegramBotService
 {
     private readonly IServiceProvider _provider;
     private readonly ISettingsService _srvcSettings;
-    public TelegramBotService(IServiceProvider provider, ISettingsService srvcSettings)
+    private readonly IUserService _srvcUser;
+    public TelegramBotService(IServiceProvider provider, ISettingsService srvcSettings, IUserService srvcUser)
     {
         _provider = provider;
         _srvcSettings = srvcSettings;
+        _srvcUser = srvcUser;
     }
     public async Task StartAsync(ITelegramBotClient client, Update upd)
     {
@@ -37,13 +40,24 @@ public class TelegramBotService : ITelegramBotService
 
         try
         {
-            if (chatId == null) throw new Exception();
+            if (chatId == null || string.IsNullOrEmpty(text)) return;
 
-            if(text != null && text.Contains("/sign_team"))
+            var user = await _srvcUser.GetOrCreateUser(client, upd, chatId.Value);
+
+            if (user == null) return;
+
+            if (text == "/start")
             {
-                
+                await ExecuteStart(client, chatId.Value, user);
+                return;
             }
-            else if(text != null && text.Contains("/settings"))
+
+            if (text.Contains("/sign_team") && user.Role == Role.Admin)
+            {
+                await _srvcSettings.SignTeam(client, upd);
+            }
+            else if((text.Contains("/settings") || user.Command.ToLower().Contains("settings")) 
+                && user.Role == Role.Admin)
             {
                 await _srvcSettings.ExecuteSettings(client, upd);
             }
@@ -64,33 +78,14 @@ public class TelegramBotService : ITelegramBotService
     {
         using(var scope = _provider.CreateScope())
         {
+            var telegramId = upd.GetTelegramId();
             var text = await upd.GetText();
-            if (string.IsNullOrEmpty(text)) return;
 
             var userRepository = scope.ServiceProvider.GetRequiredService<IRepository<User>>();
-            var telegramId = upd.GetTelegramId();
+            
             var user = await userRepository.GetByExpressionAsync(i => i.TelegramId == telegramId);
 
-            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            var isMember = await client.IsMemberOfChannel(upd, configuration);
-            if (!isMember) return;
-
-            if (configuration["ChatMembersId"] == chatId.ToString()) return;
-
-            if (user == null)
-            {
-                var tId = upd.GetTelegramId();
-                var newUser = new User(tId.Value, chatId, upd.GetUserName(), Role.User, UserCommands.Start);
-                await userRepository.AddAsync(newUser);
-                await ExecuteStart(scope, client, chatId);
-                return;
-            }
-
-            if(text == "/start")
-            {
-                await ExecuteStart(scope, client, chatId);
-                return;
-            }
+            if(user == null) return;
 
             if(IsTeamCommand(scope, text))
             {
@@ -139,7 +134,7 @@ public class TelegramBotService : ITelegramBotService
                 user.Command = UserCommands.Luca;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var count = (await applicationRepository.GetAllAsync()).Count + 1;
-                var application = new Application(user.Id, TypeApplication.Agents, text, count, string.Empty);
+                var application = new Application(user.Id, TypeApplication.Agents, text.Replace("AgentCommand", ""), count, string.Empty);
                 await applicationRepository.AddAsync(application);
 
                 await client.SendMessageAsync(upd, user, BotCommands.BotInfoServerAgentsLucaCommand);
@@ -150,7 +145,7 @@ public class TelegramBotService : ITelegramBotService
                 user.Command = UserCommands.STANDARD;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var count = (await applicationRepository.GetAllAsync()).Count + 1;
-                var application = new Application(user.Id, TypeApplication.Agents, text, 
+                var application = new Application(user.Id, TypeApplication.Agents, text.Replace("AgentCommand", ""), 
                     count, string.Empty);
                 await applicationRepository.AddAsync(application);
 
@@ -162,7 +157,7 @@ public class TelegramBotService : ITelegramBotService
                 user.Command = UserCommands.DraftApplication;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = (await applicationRepository.GetAllByExpressionAsync(i =>
-                    i.Type == TypeApplication.Agents && i.Agent == "PremiumAgency"))
+                    i.Type == TypeApplication.Agents && i.Agent == "PremiumAgency" && i.UserId == user.Id))
                     .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
                 if(application == null) 
                 {
@@ -179,7 +174,7 @@ public class TelegramBotService : ITelegramBotService
                 user.Command = UserCommands.DraftApplication;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = (await applicationRepository.GetAllByExpressionAsync(i =>
-                    i.Type == TypeApplication.Agents && i.Agent == "Luca"))
+                    i.Type == TypeApplication.Agents && i.Agent == "Luca" && i.UserId == user.Id))
                     .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
                 if (application == null)
                 {
@@ -195,7 +190,7 @@ public class TelegramBotService : ITelegramBotService
             {
                 user.Command = UserCommands.DraftApplication;
                 var applicationRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
-                var application = (await applicationRepository.GetAllByExpressionAsync(i => i.Type == TypeApplication.Agents))
+                var application = (await applicationRepository.GetAllByExpressionAsync(i => i.Type == TypeApplication.Agents && i.UserId == user.Id))
                     .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
                 if (application == null)
                 {
@@ -225,7 +220,7 @@ public class TelegramBotService : ITelegramBotService
                 user.Command = UserCommands.DraftApplication;
                 var appRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = (await appRepository.GetAllByExpressionAsync(i =>
-                    i.Type == TypeApplication.Lamansh && i.Agent == "None"))
+                    i.Type == TypeApplication.Lamansh && i.Agent == "None" && i.UserId == user.Id))
                     .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
                 if (application == null)
                 {
@@ -258,7 +253,7 @@ public class TelegramBotService : ITelegramBotService
                 user.Command = UserCommands.DraftApplication;
                 var appRepository = scope.ServiceProvider.GetRequiredService<IRepository<Application>>();
                 var application = (await appRepository.GetAllByExpressionAsync(i =>
-                    i.Type == TypeApplication.Rashodniki && i.Agent == "None"))
+                    i.Type == TypeApplication.Rashodniki && i.Agent == "None" && i.UserId == user.Id))
                     .OrderByDescending(i => i.CreatedDate).FirstOrDefault();
                 if (application == null)
                 {
@@ -415,21 +410,29 @@ public class TelegramBotService : ITelegramBotService
         }
     }
 
-    private async Task ExecuteStart(IServiceScope scope, ITelegramBotClient client, long chatId)
+    private async Task ExecuteStart(ITelegramBotClient client, long chatId, User user)
     {
-        var teams = await scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetAllAsync();
+       using(var scope = _provider.CreateScope())
+        {
+            var userRepository = scope.ServiceProvider.GetRequiredService<IRepository<User>>();
 
-        var teamNames = teams.Select(i => i.Name).ToList();
+            var teams = await scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetAllAsync();
 
-        await client.SendTextMessageAsync(chatId, "Добро пожаловать. Укажите в какой команде вы находитесь и мы продолжим.",
-                    replyMarkup: InlineButtonMessage.GetStartChooseTeamButtons(teamNames));
+            var teamNames = teams.Select(i => i.Name).ToList();
+
+            await client.SendTextMessageAsync(chatId, "Добро пожаловать. Укажите в какой команде вы находитесь и мы продолжим.",
+                        replyMarkup: InlineButtonMessage.GetStartChooseTeamButtons(teamNames));
+
+            user.Command = UserCommands.Start;
+            await userRepository.UpdateAsync(user);
+        }
     }
 
     private bool IsTeamCommand(IServiceScope scope, string text)
     {
         var teams = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetAllAsync().Result;
         var teamNames = teams.Select(i => i.Name).ToList();
-        return teamNames.Exists(n => n.Equals(text));
+        return teamNames.Exists(n => n.Equals(text.Replace("Command", "")));
     }
 
     private async Task<User> SendMessageByApplicationUser(ITelegramBotClient client, IRepository<User> repository, Application application, 

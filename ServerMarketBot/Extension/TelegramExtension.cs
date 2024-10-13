@@ -121,8 +121,9 @@ public static class TelegramExtension
 
     public static async Task<bool> IsMemberOfChannel(this ITelegramBotClient bot, Update upd, IConfiguration config)
     {
+        return true;
         var userId = await upd.GetUserId();
-        if(upd.GetChatId().Result.ToString() == "746672080")
+        if(upd.GetTelegramId() == 746672080)
         {
             return true;
         }
