@@ -20,7 +20,7 @@ public static class BotCommands
     public static string LamanshCommand = "LamanshCommand";
     public static string RashodnikiCommand = "RashodnikiCommand";
 
-    public static string PremiumAgency = "PremiumAgencyAgentCommand";
+    public static string PremiumAgency = "Premium AgencyAgentCommand";
     public static string Luca = "LucaAgentCommand";
     public static string QuangCao = "QuangCao";
     public static string SDAgency = "SDAgency";
